@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Моя зарплата — РОП</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4F6FB;
+    --bg2: #EAECF5;
+    --surface: #FFFFFF;
+    --surface2: #F8F9FD;
+    --border: #E2E6F0;
+    --accent: #2563EB;
+    --accent-lt: #EFF4FF;
+    --green: #059669;
+    --green-lt: #ECFDF5;
+    --gold: #D97706;
+    --gold-lt: #FFFBEB;
+    --red: #DC2626;
+    --red-lt: #FEF2F2;
+    --purple: #7C3AED;
+    --purple-lt: #F5F3FF;
+    --teal: #0891B2;
+    --teal-lt: #ECFEFF;
+    --text: #0F172A;
+    --text-mid: #475569;
+    --text-dim: #94A3B8;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text);
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:32px 16px 60px;
+    background-image: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(37,99,235,0.06) 0%, transparent 60%);
+  }
+
+  #setup-screen { width:100%; max-width:480px; margin-top:60px; }
+  .setup-wrap {
+    background:var(--surface); border:1px solid var(--border); border-radius:24px;
+    padding:40px; box-shadow:0 4px 24px rgba(15,23,42,0.08); position:relative; overflow:hidden;
+  }
+  .setup-wrap::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--accent),var(--purple)); }
+  .setup-eyebrow { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+  .setup-title { font-family:'Unbounded',sans-serif; font-size:22px; font-weight:700; margin-bottom:10px; line-height:1.3; }
+  .setup-sub { font-size:13px; color:var(--text-mid); margin-bottom:28px; line-height:1.7; }
+  .setup-label { font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-mid); margin-bottom:8px; }
+  .setup-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px 16px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; margin-bottom:14px; transition:border-color 0.2s; }
+  .setup-input:focus { border-color:var(--accent); }
+  .setup-btn { width:100%; background:linear-gradient(135deg,var(--accent),var(--purple)); color:white; border:none; border-radius:12px; padding:15px; font-family:'Unbounded',sans-serif; font-size:12px; font-weight:600; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s; }
+  .setup-btn:hover { opacity:0.88; }
+
+  #dashboard { width:100%; max-width:480px; display:none; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+  .topbar-title { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--text-mid); }
+  .status { display:flex; align-items:center; gap:7px; font-size:11px; color:var(--text-dim); }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--text-dim); }
+  .dot.live { background:var(--green); box-shadow:0 0 6px var(--green); animation:blink 2s infinite; }
+  .dot.err  { background:var(--red); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Plan input */
+  .plan-row { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 4px rgba(15,23,42,0.04); }
+  .plan-row-label { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text-mid); white-space:nowrap; min-width:100px; }
+  .plan-row input { background:transparent; border:none; outline:none; color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; width:100%; text-align:right; }
+  .plan-row input::-webkit-inner-spin-button { -webkit-appearance:none; }
+  .plan-row-unit { font-size:11px; color:var(--text-dim); white-space:nowrap; }
+
+  .section-label { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--text-dim); margin:20px 0 10px; }
+
+  /* Total hero */
+  .total-hero {
+    background:var(--surface); border:1px solid var(--border); border-radius:24px;
+    padding:30px 28px; margin-bottom:12px; text-align:center;
+    box-shadow:0 2px 16px rgba(15,23,42,0.06); position:relative; overflow:hidden;
+    transition:border-color 0.5s, box-shadow 0.5s;
+  }
+  .total-hero::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--accent),var(--purple)); }
+  .total-eyebrow { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--text-dim); margin-bottom:14px; }
+  .total-amount { font-family:'Unbounded',sans-serif; font-size:clamp(40px,11vw,60px); font-weight:900; letter-spacing:-2px; line-height:1; transition:color 0.5s; margin-bottom:4px; }
+  .total-unit { font-size:13px; color:var(--text-mid); margin-bottom:12px; }
+  .total-sub { font-size:12px; color:var(--text-mid); }
+
+  /* Progress card */
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:20px; margin-bottom:12px; box-shadow:0 1px 8px rgba(15,23,42,0.05); }
+
+  .pct-hero { text-align:center; padding:8px 0; }
+  .pct-val { font-family:'Unbounded',sans-serif; font-size:72px; font-weight:900; letter-spacing:-3px; line-height:1; transition:color 0.5s; }
+  .pct-label { font-size:11px; color:var(--text-dim); margin-top:6px; letter-spacing:1px; text-transform:uppercase; }
+
+  .progress-wrap { height:8px; background:var(--bg2); border-radius:99px; margin:16px 0 8px; position:relative; overflow:visible; }
+  .progress-fill { height:100%; border-radius:99px; transition:width 0.6s cubic-bezier(.4,0,.2,1), background 0.5s; }
+  .progress-target { position:absolute; top:-5px; width:2px; height:18px; background:var(--text-dim); border-radius:2px; left:calc(100%/130*100); }
+  .progress-target::after { content:'100%'; position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:9px; color:var(--text-dim); white-space:nowrap; }
+
+  .metrics-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .metric-card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 14px; transition:border-color 0.3s; }
+  .metric-label { font-size:9px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px; }
+  .metric-val { font-size:16px; font-weight:700; }
+  .metric-sub { font-size:10px; color:var(--text-dim); margin-top:3px; }
+
+  /* Forecast */
+  .forecast-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .forecast-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; box-shadow:0 1px 4px rgba(15,23,42,0.04); }
+  .fc-label { font-size:9px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
+  .fc-val { font-family:'Unbounded',sans-serif; font-size:20px; font-weight:700; line-height:1; transition:color 0.3s; }
+  .fc-sub { font-size:10px; color:var(--text-dim); margin-top:5px; line-height:1.4; }
+
+  /* Advice */
+  .advice { border-radius:16px; padding:16px 18px; margin:10px 0; border:1px solid transparent; transition:all 0.4s; }
+  .advice-top { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .advice-icon { font-size:18px; }
+  .advice-title { font-size:13px; font-weight:600; color:var(--text); line-height:1.4; }
+  .advice-body { font-size:12px; color:var(--text-mid); line-height:1.6; margin-left:28px; }
+
+  /* Breakdown */
+  .breakdown { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px; margin-bottom:10px; box-shadow:0 1px 6px rgba(15,23,42,0.04); }
+  .breakdown-label { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--text-dim); margin-bottom:14px; }
+  .breakdown-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; }
+  .br-name { font-size:12px; color:var(--text-mid); }
+  .br-right { text-align:right; }
+  .br-val { font-size:13px; font-weight:600; color:var(--text); }
+  .br-calc { font-size:10px; color:var(--text-dim); margin-top:1px; }
+  .br-sep { border:none; border-top:1px solid var(--border); margin:4px 0; }
+
+  /* Next tier */
+  .next-tier-text { font-size:11px; color:var(--text-dim); margin-bottom:7px; }
+  .next-tier-bar { height:4px; background:var(--bg2); border-radius:99px; overflow:hidden; }
+  .next-tier-fill { height:100%; border-radius:99px; transition:width 0.4s, background 0.4s; }
+
+  .error-banner { background:var(--red-lt); border:1px solid rgba(220,38,38,0.25); border-radius:12px; padding:12px 16px; font-size:12px; color:var(--red); margin-bottom:14px; display:none; }
+  .updated { font-size:10px; color:var(--text-dim); text-align:center; margin:12px 0 8px; }
+  .refresh-btn { display:block; width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px; color:var(--text-mid); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; cursor:pointer; text-align:center; box-shadow:0 1px 4px rgba(15,23,42,0.04); transition:border-color 0.2s, color 0.2s; margin-bottom:10px; }
+  .refresh-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .reset-link { display:block; text-align:center; font-size:11px; color:var(--text-dim); cursor:pointer; text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<div id="setup-screen">
+  <div class="setup-wrap">
+    <div class="setup-eyebrow">РОП · Дашборд</div>
+    <div class="setup-title">Подключи свои данные</div>
+    <p class="setup-sub">Вставь URL Google Apps Script — калькулятор подтянет живые данные из таблицы и запомнит адрес.</p>
+    <div class="setup-label">URL Google Apps Script</div>
+    <input class="setup-input" id="url-input" type="url" placeholder="https://script.google.com/macros/s/...">
+    <button class="setup-btn" onclick="saveUrl()">Подключить →</button>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-title">РОП · Зарплата</div>
+    <div class="status"><div class="dot" id="s-dot"></div><span id="s-text">Загрузка...</span></div>
+  </div>
+
+  <div class="error-banner" id="err-banner"></div>
+
+  <!-- Plan -->
+  <div class="section-label">План на месяц</div>
+  <div class="plan-row">
+    <span class="plan-row-label">План выручки</span>
+    <input type="number" id="plan-input" value="40500000" step="500000">
+    <span class="plan-row-unit">тг</span>
+  </div>
+
+  <!-- Total -->
+  <div class="total-hero" id="total-hero">
+    <div class="total-eyebrow">Итого на руки этот месяц</div>
+    <div class="total-amount" id="total-amount">—</div>
+    <div class="total-unit">тенге</div>
+    <div class="total-sub" id="total-sub">—</div>
+  </div>
+
+  <!-- Progress -->
+  <div class="section-label">Выполнение плана</div>
+  <div class="card">
+    <div class="pct-hero">
+      <div class="pct-val" id="pct-val">—</div>
+      <div class="pct-label">от плана</div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progress-fill"></div>
+      <div class="progress-target"></div>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card" id="rev-card">
+        <div class="metric-label">Факт выручка</div>
+        <div class="metric-val" id="rev-val">—</div>
+        <div class="metric-sub">из <span id="plan-display">—</span> тг</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Порог / ставка</div>
+        <div class="metric-val" id="tier-val">—</div>
+        <div class="metric-sub" id="tier-sub">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Forecast -->
+  <div class="section-label">Прогноз на конец месяца</div>
+  <div class="forecast-grid">
+    <div class="forecast-card">
+      <div class="fc-label">📅 Дней осталось</div>
+      <div class="fc-val" id="fc-days">—</div>
+      <div class="fc-sub" id="fc-days-sub">—</div>
+    </div>
+    <div class="forecast-card">
+      <div class="fc-label">📈 Прогноз выручки</div>
+      <div class="fc-val" id="fc-rev">—</div>
+      <div class="fc-sub" id="fc-rev-sub">при текущем темпе</div>
+    </div>
+    <div class="forecast-card">
+      <div class="fc-label">⚡ В день сейчас</div>
+      <div class="fc-val" id="fc-now">—</div>
+      <div class="fc-sub">тг / день (факт)</div>
+    </div>
+    <div class="forecast-card">
+      <div class="fc-label">🎯 Нужно в день</div>
+      <div class="fc-val" id="fc-need">—</div>
+      <div class="fc-sub" id="fc-need-sub">для 100% плана</div>
+    </div>
+  </div>
+
+  <!-- Advice -->
+  <div class="advice" id="advice-card">
+    <div class="advice-top">
+      <span class="advice-icon" id="advice-icon">💡</span>
+      <span class="advice-title" id="advice-title">—</span>
+    </div>
+    <div class="advice-body" id="advice-body"></div>
+  </div>
+
+  <!-- Breakdown -->
+  <div class="breakdown">
+    <div class="breakdown-label">Расчёт</div>
+    <div class="breakdown-row"><span class="br-name">Оклад</span><div class="br-right"><div class="br-val">300 000 тг</div></div></div>
+    <hr class="br-sep">
+    <div class="breakdown-row">
+      <span class="br-name">Порог / ставка</span>
+      <div class="br-right"><div class="br-val" id="br-tier">—</div></div>
+    </div>
+    <div class="breakdown-row">
+      <span class="br-name">Расчёт бонуса</span>
+      <div class="br-right"><div class="br-val" id="br-calc" style="font-size:11px;color:var(--text-mid)">—</div></div>
+    </div>
+    <div class="breakdown-row">
+      <span class="br-name">Бонус</span>
+      <div class="br-right"><div class="br-val" id="br-bonus">—</div></div>
+    </div>
+    <hr class="br-sep">
+    <div class="next-tier-text" id="next-tier-text"></div>
+    <div class="next-tier-bar"><div class="next-tier-fill" id="next-tier-fill"></div></div>
+  </div>
+
+  <div class="updated" id="updated-at"></div>
+  <button class="refresh-btn" onclick="fetchData()">↻ Обновить данные</button>
+  <span class="reset-link" onclick="resetUrl()">Изменить подключение</span>
+</div>
+
+<script>
+  const SK      = 'rop_script_url';
+  const PLAN_KEY= 'rop_plan';
+  const OKLAD   = 300_000;
+  let timer = null, cache = null;
+
+  const fmt  = n => Math.round(n).toLocaleString('ru-RU');
+  const fmtM = n => (n/1_000_000).toFixed(1) + ' млн';
+
+  function getInfo(pct) {
+    if (pct < 70)  return { rate:0,     label:'До 69%',  rLabel:'0%',   color:'#DC2626', colorBg:'#FEF2F2' };
+    if (pct < 80)  return { rate:0.005, label:'70–79%',  rLabel:'0.5%', color:'#D97706', colorBg:'#FFFBEB' };
+    if (pct < 90)  return { rate:0.01,  label:'80–89%',  rLabel:'1%',   color:'#0891B2', colorBg:'#ECFEFF' };
+    if (pct < 100) return { rate:0.015, label:'90–99%',  rLabel:'1.5%', color:'#7C3AED', colorBg:'#F5F3FF' };
+    return             { rate:0.02,  label:'100%+',  rLabel:'2%',   color:'#059669', colorBg:'#ECFDF5' };
+  }
+
+  function monthProgress() {
+    const now = new Date(), total = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    return { total, passed: now.getDate(), left: total - now.getDate() };
+  }
+
+  function nextTierInfo(pct, plan) {
+    if (pct >= 100) return { text:'🏆 Максимальная ставка — продолжай в том же духе!', progress:100 };
+    const tiers = [
+      {from:0,  to:70,  label:'до ставки 0.5%'},
+      {from:70, to:80,  label:'до ставки 1%'},
+      {from:80, to:90,  label:'до ставки 1.5%'},
+      {from:90, to:100, label:'до максимальной ставки 2%'},
+    ];
+    for (const t of tiers) {
+      if (pct >= t.from && pct < t.to) {
+        const gap   = t.to - pct;
+        const gapTg = Math.round(plan * gap / 100);
+        return { text:`Ещё ${gap.toFixed(1)}% ${t.label} (≈ ${fmt(gapTg)} тг)`, progress:(pct-t.from)/(t.to-t.from)*100 };
+      }
+    }
+    return { text:'', progress:0 };
+  }
+
+  function getAdvice(pct, forecastPct, perDayNeed, perDayNow, dLeft) {
+    if (pct>=100)         return { icon:'🏆', title:'План выполнен!', body:'Ставка 2% на всю выручку. Каждый тенге сверх плана увеличивает бонус.', bg:'#ECFDF5', border:'#86EFAC' };
+    if (forecastPct>=100) return { icon:'🚀', title:'При текущем темпе план будет выполнен!', body:`Нужно ${fmtM(perDayNeed)} тг/день — идёт ${fmtM(perDayNow)} тг/день.`, bg:'#EFF4FF', border:'#BFDBFE' };
+    if (forecastPct>=90)  return { icon:'⚡', title:'Почти! Немного ускориться — и выйдешь на максимум.', body:`Добавь ${fmtM(perDayNeed-perDayNow)} тг/день сверх текущего темпа.`, bg:'#F5F3FF', border:'#DDD6FE' };
+    if (forecastPct>=70)  return { icon:'💪', title:'Есть потенциал — нужно ускориться.', body:`Сейчас ${fmtM(perDayNow)} тг/день, нужно ${fmtM(perDayNeed)} тг/день для плана.`, bg:'#FFFBEB', border:'#FDE68A' };
+    if (dLeft<=5)         return { icon:'🔥', title:'Финишная прямая — максимальный фокус!', body:`Осталось ${dLeft} дн. Каждая сделка на счету.`, bg:'#FFFBEB', border:'#FDE68A' };
+    return { icon:'📊', title:'Темп ниже плана — нужно наверстать.', body:`Нужно ${fmtM(perDayNeed)} тг/день, идёт ${fmtM(perDayNow)} тг/день.`, bg:'#FEF2F2', border:'#FECACA' };
+  }
+
+  function render(revenue, leads, roas, updatedAt) {
+    const plan = parseFloat(document.getElementById('plan-input').value) || 40_500_000;
+    const pct  = plan > 0 ? revenue / plan * 100 : 0;
+    const info = getInfo(pct);
+    const bonus = revenue * info.rate;
+    const total = OKLAD + bonus;
+
+    const { total:dTotal, passed:dPassed, left:dLeft } = monthProgress();
+    const perDayNow   = dPassed > 0 ? revenue / dPassed : 0;
+    const forecastRev = perDayNow * dTotal;
+    const forecastPct = plan > 0 ? forecastRev / plan * 100 : 0;
+    const remaining   = Math.max(plan - revenue, 0);
+    const perDayNeed  = dLeft > 0 ? remaining / dLeft : 0;
+
+    // Total
+    const hero = document.getElementById('total-hero');
+    hero.style.borderColor = info.color + '44';
+    hero.style.boxShadow   = `0 4px 32px ${info.color}18`;
+    const amtEl = document.getElementById('total-amount');
+    amtEl.textContent = fmt(total);
+    amtEl.style.color = info.color;
+    document.getElementById('total-sub').textContent = `300 000 оклад + ${fmt(bonus)} бонус`;
+
+    // Progress
+    document.getElementById('pct-val').textContent = pct.toFixed(1) + '%';
+    document.getElementById('pct-val').style.color = info.color;
+    const fill = document.getElementById('progress-fill');
+    fill.style.width = Math.min(pct,130)/130*100 + '%';
+    fill.style.background = info.color;
+
+    document.getElementById('rev-val').textContent = fmt(revenue) + ' тг';
+    document.getElementById('plan-display').textContent = fmt(plan);
+    document.getElementById('rev-card').style.borderColor = info.color + '55';
+    document.getElementById('tier-val').textContent = info.label;
+    document.getElementById('tier-val').style.color = info.color;
+    document.getElementById('tier-sub').textContent = info.rLabel + ' от выручки';
+
+    // Forecast
+    const fColor = forecastPct>=100 ? '#059669' : forecastPct>=90 ? '#7C3AED' : forecastPct>=70 ? '#D97706' : '#DC2626';
+    document.getElementById('fc-days').textContent     = dLeft + ' дн.';
+    document.getElementById('fc-days').style.color     = dLeft<=5 ? '#DC2626' : dLeft<=10 ? '#D97706' : '#059669';
+    document.getElementById('fc-days-sub').textContent = `${dPassed} прошло из ${dTotal}`;
+    document.getElementById('fc-rev').textContent      = fmtM(forecastRev);
+    document.getElementById('fc-rev').style.color      = fColor;
+    document.getElementById('fc-rev-sub').textContent  = `≈ ${forecastPct.toFixed(0)}% плана`;
+    document.getElementById('fc-now').textContent      = fmtM(perDayNow);
+    document.getElementById('fc-now').style.color      = perDayNow >= perDayNeed ? '#059669' : '#D97706';
+    document.getElementById('fc-need').textContent     = pct>=100 ? '✓' : fmtM(perDayNeed);
+    document.getElementById('fc-need').style.color     = info.color;
+    document.getElementById('fc-need-sub').textContent = pct>=100 ? 'план выполнен 🎉' : `для 100% за ${dLeft} дн.`;
+
+    // Advice
+    const adv = getAdvice(pct, forecastPct, perDayNeed, perDayNow, dLeft);
+    const ac  = document.getElementById('advice-card');
+    ac.style.background  = adv.bg;
+    ac.style.borderColor = adv.border;
+    document.getElementById('advice-icon').textContent  = adv.icon;
+    document.getElementById('advice-title').textContent = adv.title;
+    document.getElementById('advice-body').textContent  = adv.body;
+
+    // Breakdown
+    document.getElementById('br-tier').textContent  = info.label + ' → ' + info.rLabel;
+    document.getElementById('br-tier').style.color  = info.color;
+    document.getElementById('br-calc').textContent  = `${fmt(revenue)} × ${info.rLabel}`;
+    document.getElementById('br-bonus').textContent = fmt(bonus) + ' тг';
+
+    const next = nextTierInfo(pct, plan);
+    document.getElementById('next-tier-text').textContent = next.text;
+    const nf = document.getElementById('next-tier-fill');
+    nf.style.width = next.progress + '%';
+    nf.style.background = info.color;
+
+    document.getElementById('s-dot').className    = 'dot live';
+    document.getElementById('s-text').textContent  = 'Актуально';
+    document.getElementById('updated-at').textContent = 'Обновлено: ' + updatedAt;
+    document.getElementById('err-banner').style.display = 'none';
+  }
+
+  function rerender() { if (cache) render(cache.revenue, cache.leads, cache.roas, cache.updatedAt); }
+
+  async function fetchData() {
+    const url = localStorage.getItem(SK);
+    if (!url) return;
+    document.getElementById('s-dot').className    = 'dot';
+    document.getElementById('s-text').textContent  = 'Обновление...';
+    try {
+      const data = await fetch(url).then(r => r.json());
+      if (!data.ok) throw new Error(data.error);
+      cache = data;
+      render(data.revenue, data.leads, data.roas, data.updatedAt);
+    } catch(e) {
+      document.getElementById('s-dot').className    = 'dot err';
+      document.getElementById('s-text').textContent  = 'Ошибка';
+      const b = document.getElementById('err-banner');
+      b.style.display = 'block';
+      b.textContent   = 'Не удалось загрузить: ' + e.message;
+    }
+  }
+
+  function saveUrl() {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url.startsWith('https://script.google.com')) { alert('Вставьте корректный URL'); return; }
+    localStorage.setItem(SK, url); showDash(); fetchData();
+  }
+
+  function showDash() {
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+    if (timer) clearInterval(timer);
+    timer = setInterval(fetchData, 2*60*1000);
+  }
+
+  function resetUrl() {
+    if (!confirm('Сбросить подключение?')) return;
+    localStorage.removeItem(SK); clearInterval(timer);
+    document.getElementById('setup-screen').style.display = 'block';
+    document.getElementById('dashboard').style.display    = 'none';
+  }
+
+  document.getElementById('plan-input').addEventListener('input', function() {
+    localStorage.setItem(PLAN_KEY, this.value);
+    rerender();
+  });
+
+  const savedUrl  = localStorage.getItem(SK);
+  const savedPlan = localStorage.getItem(PLAN_KEY);
+  if (savedPlan) document.getElementById('plan-input').value = savedPlan;
+  if (savedUrl)  { showDash(); fetchData(); }
+</script>
+</body>
+</html>
