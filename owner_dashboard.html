@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Зарплатный дашборд — Relitalk</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F0F2FA;
+    --surface: #FFFFFF;
+    --surface2: #F8F9FD;
+    --border: #E2E6F0;
+    --text: #0F172A;
+    --text-mid: #475569;
+    --text-dim: #94A3B8;
+    --rop: #2563EB;
+    --rop-lt: #EFF4FF;
+    --mkt: #7C3AED;
+    --mkt-lt: #F5F3FF;
+    --tgt: #EA580C;
+    --tgt-lt: #FFF7ED;
+    --green: #059669;
+    --green-lt: #ECFDF5;
+    --gold: #D97706;
+    --gold-lt: #FFFBEB;
+    --red: #DC2626;
+    --red-lt: #FEF2F2;
+    --teal: #0891B2;
+    --teal-lt: #ECFEFF;
+    --purple: #7C3AED;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text);
+    min-height:100vh; padding:32px 20px 60px;
+    background-image: radial-gradient(ellipse 60% 30% at 50% 0%, rgba(37,99,235,0.06) 0%, transparent 60%);
+  }
+
+  /* HEADER */
+  .header { text-align:center; margin-bottom:36px; }
+  .header-eyebrow { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--text-dim); margin-bottom:10px; }
+  .header-title { font-family:'Unbounded',sans-serif; font-size:clamp(22px,4vw,32px); font-weight:900; letter-spacing:-1px; margin-bottom:8px; }
+  .header-sub { font-size:13px; color:var(--text-mid); }
+
+  /* SETUP */
+  #setup-screen { max-width:520px; margin:60px auto 0; }
+  .setup-wrap { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:40px; box-shadow:0 4px 24px rgba(15,23,42,0.08); position:relative; overflow:hidden; }
+  .setup-wrap::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--rop),var(--mkt),var(--tgt)); }
+  .setup-title { font-family:'Unbounded',sans-serif; font-size:20px; font-weight:700; margin-bottom:8px; }
+  .setup-sub { font-size:13px; color:var(--text-mid); margin-bottom:24px; line-height:1.7; }
+  .setup-label { font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-mid); margin-bottom:8px; }
+  .setup-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px 16px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; margin-bottom:14px; transition:border-color 0.2s; }
+  .setup-input:focus { border-color:var(--rop); }
+  .setup-btn { width:100%; background:linear-gradient(135deg,var(--rop),var(--mkt),var(--tgt)); color:white; border:none; border-radius:12px; padding:15px; font-family:'Unbounded',sans-serif; font-size:12px; font-weight:600; letter-spacing:1px; cursor:pointer; }
+
+  /* TOPBAR */
+  .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:10px; }
+  .topbar-left { }
+  .topbar-title { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--text-mid); }
+  .status { display:flex; align-items:center; gap:7px; font-size:11px; color:var(--text-dim); }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--text-dim); }
+  .dot.live { background:var(--green); box-shadow:0 0 6px var(--green); animation:blink 2s infinite; }
+  .dot.err  { background:var(--red); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* TOTAL SUMMARY */
+  .summary-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:24px 28px; margin-bottom:20px; box-shadow:0 2px 16px rgba(15,23,42,0.06);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;
+    position:relative; overflow:hidden;
+  }
+  .summary-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--rop),var(--mkt),var(--tgt)); }
+  .summary-label { font-family:'Unbounded',sans-serif; font-size:9px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px; }
+  .summary-amount { font-family:'Unbounded',sans-serif; font-size:36px; font-weight:900; letter-spacing:-1px; color:var(--text); }
+  .summary-unit { font-size:12px; color:var(--text-mid); margin-top:2px; }
+  .summary-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  .s-pill { font-size:11px; font-weight:600; padding:5px 14px; border-radius:99px; border:1px solid transparent; }
+
+  /* GRID */
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+  @media(max-width:900px) { .grid { grid-template-columns:1fr; } }
+
+  /* EMPLOYEE CARD */
+  .emp-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:0; box-shadow:0 2px 12px rgba(15,23,42,0.06); overflow:hidden;
+    transition:box-shadow 0.3s;
+  }
+  .emp-card:hover { box-shadow:0 4px 24px rgba(15,23,42,0.10); }
+
+  .emp-header { padding:18px 20px 14px; border-bottom:1px solid var(--border); }
+  .emp-badge { display:inline-block; font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; padding:3px 10px; border-radius:99px; margin-bottom:10px; }
+  .emp-name { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:700; margin-bottom:2px; }
+  .emp-oklad { font-size:11px; color:var(--text-dim); }
+
+  .emp-body { padding:16px 20px; }
+
+  /* Big % */
+  .emp-pct { font-family:'Unbounded',sans-serif; font-size:48px; font-weight:900; letter-spacing:-2px; line-height:1; transition:color 0.4s; }
+  .emp-pct-label { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; margin-top:2px; }
+
+  /* Progress */
+  .bar { height:5px; background:var(--bg); border-radius:99px; margin-bottom:14px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:99px; transition:width 0.6s, background 0.4s; }
+
+  /* KPI mini */
+  .kpi-mini { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .kpi-mini-row { display:flex; justify-content:space-between; align-items:center; }
+  .kpi-mini-name { font-size:10px; color:var(--text-dim); }
+  .kpi-mini-right { display:flex; align-items:center; gap:6px; }
+  .kpi-mini-pct { font-size:11px; font-weight:700; }
+  .kpi-mini-bar { width:60px; height:4px; background:var(--bg); border-radius:99px; overflow:hidden; }
+  .kpi-mini-fill { height:100%; border-radius:99px; transition:width 0.5s, background 0.4s; }
+
+  /* Total */
+  .emp-total { background:var(--surface2); border-radius:12px; padding:12px 14px; }
+  .emp-total-label { font-size:9px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px; }
+  .emp-total-amount { font-family:'Unbounded',sans-serif; font-size:22px; font-weight:900; letter-spacing:-1px; transition:color 0.4s; }
+  .emp-total-unit { font-size:10px; color:var(--text-dim); margin-top:2px; }
+  .emp-total-sub { font-size:10px; color:var(--text-dim); margin-top:4px; }
+
+  /* Tier badge */
+  .tier-badge { display:inline-block; font-size:9px; font-weight:700; padding:2px 8px; border-radius:99px; margin-top:6px; }
+
+  /* PLAN INPUTS */
+  .plans-section { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:20px 24px; margin-bottom:20px; box-shadow:0 1px 8px rgba(15,23,42,0.04); }
+  .plans-title { font-family:'Unbounded',sans-serif; font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--text-mid); margin-bottom:16px; }
+  .plans-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:900px) { .plans-grid { grid-template-columns:1fr; } }
+  .plan-group-title { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+  .plan-row { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:9px 12px; margin-bottom:6px; }
+  .plan-row-label { font-size:10px; color:var(--text-mid); white-space:nowrap; min-width:55px; }
+  .plan-row input { background:transparent; border:none; outline:none; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; width:100%; text-align:right; }
+  .plan-row input::-webkit-inner-spin-button { -webkit-appearance:none; }
+  .plan-row-unit { font-size:10px; color:var(--text-dim); white-space:nowrap; }
+
+  /* Footer */
+  .footer { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  .updated { font-size:10px; color:var(--text-dim); }
+  .footer-btns { display:flex; gap:8px; }
+  .btn-sm { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:8px 16px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; color:var(--text-mid); cursor:pointer; transition:all 0.2s; }
+  .btn-sm:hover { border-color:var(--rop); color:var(--rop); }
+
+  .error-banner { background:var(--red-lt); border:1px solid rgba(220,38,38,0.25); border-radius:12px; padding:12px 16px; font-size:12px; color:var(--red); margin-bottom:16px; display:none; }
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup-screen">
+  <div class="setup-wrap">
+    <div class="setup-title">Дашборд руководителя</div>
+    <p class="setup-sub">Вставь URL Google Apps Script — дашборд подтянет данные по всем трём сотрудникам из одной таблицы.</p>
+    <div class="setup-label">URL Google Apps Script</div>
+    <input class="setup-input" id="url-input" type="url" placeholder="https://script.google.com/macros/s/...">
+    <button class="setup-btn" onclick="saveUrl()">Подключить →</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none; max-width:1200px; margin:0 auto;">
+  <div class="header">
+    <div class="header-eyebrow">Relitalk School</div>
+    <div class="header-title">Зарплатный дашборд</div>
+    <div class="header-sub">Все три сотрудника — один экран</div>
+  </div>
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">Руководитель · Обзор</div>
+    </div>
+    <div class="status"><div class="dot" id="s-dot"></div><span id="s-text">Загрузка...</span></div>
+  </div>
+
+  <div class="error-banner" id="err-banner"></div>
+
+  <!-- Summary -->
+  <div class="summary-card">
+    <div>
+      <div class="summary-label">Суммарные выплаты за месяц</div>
+      <div class="summary-amount" id="total-payroll">—</div>
+      <div class="summary-unit">тенге (оклады + бонусы)</div>
+    </div>
+    <div class="summary-pills" id="summary-pills"></div>
+  </div>
+
+  <!-- Plans -->
+  <div class="plans-section">
+    <div class="plans-title">Планы на месяц</div>
+    <div class="plans-grid">
+      <!-- РОП -->
+      <div>
+        <div class="plan-group-title" style="color:var(--rop)">РОП</div>
+        <div class="plan-row">
+          <span class="plan-row-label">Выручка</span>
+          <input type="number" id="rop-plan" value="40500000" step="500000">
+          <span class="plan-row-unit">тг</span>
+        </div>
+      </div>
+      <!-- Маркетолог -->
+      <div>
+        <div class="plan-group-title" style="color:var(--mkt)">Маркетолог</div>
+        <div class="plan-row">
+          <span class="plan-row-label">Выручка</span>
+          <input type="number" id="mkt-plan-rev" value="35000000" step="500000">
+          <span class="plan-row-unit">тг</span>
+        </div>
+        <div class="plan-row">
+          <span class="plan-row-label">ROAS</span>
+          <input type="number" id="mkt-plan-roas" value="3.3" step="0.1">
+          <span class="plan-row-unit">x</span>
+        </div>
+        <div class="plan-row">
+          <span class="plan-row-label">Лиды</span>
+          <input type="number" id="mkt-plan-leads" value="3000" step="100">
+          <span class="plan-row-unit">лидов</span>
+        </div>
+      </div>
+      <!-- Таргетолог -->
+      <div>
+        <div class="plan-group-title" style="color:var(--tgt)">Таргетолог</div>
+        <div class="plan-row">
+          <span class="plan-row-label">Выручка</span>
+          <input type="number" id="tgt-plan-rev" value="35000000" step="500000">
+          <span class="plan-row-unit">тг</span>
+        </div>
+        <div class="plan-row">
+          <span class="plan-row-label">ROAS</span>
+          <input type="number" id="tgt-plan-roas" value="3.0" step="0.1">
+          <span class="plan-row-unit">x</span>
+        </div>
+        <div class="plan-row">
+          <span class="plan-row-label">Лиды</span>
+          <input type="number" id="tgt-plan-leads" value="2800" step="100">
+          <span class="plan-row-unit">лидов</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee cards -->
+  <div class="grid">
+
+    <!-- РОП -->
+    <div class="emp-card" id="rop-card">
+      <div class="emp-header">
+        <div class="emp-badge" style="background:var(--rop-lt);color:var(--rop);">РОП</div>
+        <div class="emp-name">Руководитель продаж</div>
+        <div class="emp-oklad">Оклад: 300 000 тг</div>
+      </div>
+      <div class="emp-body">
+        <div class="emp-pct" id="rop-pct">—</div>
+        <div class="emp-pct-label">выполнение плана</div>
+        <div class="bar"><div class="bar-fill" id="rop-bar"></div></div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-row">
+            <span class="kpi-mini-name">Выручка</span>
+            <div class="kpi-mini-right">
+              <span class="kpi-mini-pct" id="rop-rev-pct">—</span>
+              <div class="kpi-mini-bar"><div class="kpi-mini-fill" id="rop-rev-bar"></div></div>
+            </div>
+          </div>
+          <div class="kpi-mini-row">
+            <span class="kpi-mini-name">Факт</span>
+            <span class="kpi-mini-pct" id="rop-rev-fact" style="font-size:10px;color:var(--text-mid)">—</span>
+          </div>
+        </div>
+        <div class="tier-badge" id="rop-tier"></div>
+        <div style="margin-top:10px"></div>
+        <div class="emp-total" id="rop-total-card">
+          <div class="emp-total-label">Итого на руки</div>
+          <div class="emp-total-amount" id="rop-total">—</div>
+          <div class="emp-total-unit">тенге</div>
+          <div class="emp-total-sub" id="rop-total-sub">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- МАРКЕТОЛОГ -->
+    <div class="emp-card" id="mkt-card">
+      <div class="emp-header">
+        <div class="emp-badge" style="background:var(--mkt-lt);color:var(--mkt);">Маркетолог</div>
+        <div class="emp-name">Маркетолог</div>
+        <div class="emp-oklad">Оклад: 300 000 тг · 70%/15%/15%</div>
+      </div>
+      <div class="emp-body">
+        <div class="emp-pct" id="mkt-pct">—</div>
+        <div class="emp-pct-label">выполнение (выручка)</div>
+        <div class="bar"><div class="bar-fill" id="mkt-bar"></div></div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-row">
+            <span class="kpi-mini-name">Выручка (70%)</span>
+            <div class="kpi-mini-right">
+              <span class="kpi-mini-pct" id="mkt-rev-pct">—</span>
+              <div class="kpi-mini-bar"><div class="kpi-mini-fill" id="mkt-rev-bar"></div></div>
+            </div>
+          </div>
+          <div class="kpi-mini-row">
+            <span class="kpi-mini-name">ROAS (15%)</span>
+            <div class="kpi-mini-right">
+              <span class="kpi-mini-pct" id="mkt-roas-pct">—</span>
+              <div class="kpi-mini-bar"><div class="kpi-mini-fill" id="mkt-roas-bar"></div></div>
+            </div>
+          </div>
+          <div class="kpi-mini-row">
+            <span class="kpi-mini-name">Лиды (15%)</span>
+            <div class="kpi-mini-right">
+              <span class="kpi-mini-pct" id="mkt-leads-pct">—</span>
+              <div class="kpi-mini-bar"><div class="kpi-mini-fill" id="mkt-leads-bar"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="emp-total" id="mkt-total-card">
+          <div class="emp-total-label">Итого на руки</div>
+          <div class="emp-total-amount" id="mkt-total">—</div>
+          <div class="emp-total-unit">тенге</div>
+          <div class="emp-total-sub" id="mkt-total-sub">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ТАРГЕТОЛОГ -->
+    <div class="emp-card" id="tgt-card">
+      <div class="emp-header">
+        <div class="emp-badge" style="background:var(--tgt-lt);color:var(--tgt);">Таргетолог</div>
+        <div class="emp-name">Таргетолог</div>
+        <div class="emp-oklad">Оклад: 250 000 тг · 70%/15%/15%</div>
+      </div>
+      <div class="emp-body">
+        <div class="emp-pct" id="tgt-pct">—</div>
+        <div class="emp-pct-label">выполнение (выручка)</div>
+        <div class="bar"><div class="bar-fill" id="tgt-bar"></div></div>
+        <div class="kpi-mini">
+          <div class="kpi-mini-row">
+            <span class="kpi-mini-name">Выручка (70%)</span>
+            <div class="kpi-mini-right">
+              <span class="kpi-mini-pct" id="tgt-rev-pct">—</span>
+              <div class="kpi-mini-bar"><div class="kpi-mini-fill" id="tgt-rev-bar"></div></div>
+            </div>
+          </div>
+          <div class="kpi-mini-row">
+            <span class="kpi-mini-name">ROAS (15%)</span>
+            <div class="kpi-mini-right">
+              <span class="kpi-mini-pct" id="tgt-roas-pct">—</span>
+              <div class="kpi-mini-bar"><div class="kpi-mini-fill" id="tgt-roas-bar"></div></div>
+            </div>
+          </div>
+          <div class="kpi-mini-row">
+            <span class="kpi-mini-name">Лиды (15%)</span>
+            <div class="kpi-mini-right">
+              <span class="kpi-mini-pct" id="tgt-leads-pct">—</span>
+              <div class="kpi-mini-bar"><div class="kpi-mini-fill" id="tgt-leads-bar"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="emp-total" id="tgt-total-card">
+          <div class="emp-total-label">Итого на руки</div>
+          <div class="emp-total-amount" id="tgt-total">—</div>
+          <div class="emp-total-unit">тенге</div>
+          <div class="emp-total-sub" id="tgt-total-sub">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <div class="footer">
+    <div class="updated" id="updated-at"></div>
+    <div class="footer-btns">
+      <button class="btn-sm" onclick="fetchData()">↻ Обновить</button>
+      <button class="btn-sm" onclick="resetUrl()">Изменить подключение</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SK = 'owner_script_url';
+  let timer = null, cache = null;
+
+  const fmt = n => Math.round(n).toLocaleString('ru-RU');
+
+  function getRopInfo(pct) {
+    if (pct < 70)  return { rate:0,     label:'До 69%',  rLabel:'0%',   color:'#DC2626', colorBg:'#FEF2F2' };
+    if (pct < 80)  return { rate:0.005, label:'70–79%',  rLabel:'0.5%', color:'#D97706', colorBg:'#FFFBEB' };
+    if (pct < 90)  return { rate:0.01,  label:'80–89%',  rLabel:'1%',   color:'#0891B2', colorBg:'#ECFEFF' };
+    if (pct < 100) return { rate:0.015, label:'90–99%',  rLabel:'1.5%', color:'#7C3AED', colorBg:'#F5F3FF' };
+    return             { rate:0.02,  label:'100%+',  rLabel:'2%',   color:'#059669', colorBg:'#ECFDF5' };
+  }
+
+  function getMktInfo(pct) { return getRopInfo(pct); }
+
+  function getTgtInfo(pct) {
+    const MAX = 0.005;
+    if (pct < 70)  return { rate:0,        label:'До 69%',  rLabel:'0%',     color:'#DC2626', colorBg:'#FEF2F2' };
+    if (pct < 80)  return { rate:MAX*0.25,  label:'70–79%',  rLabel:'0.125%', color:'#D97706', colorBg:'#FFFBEB' };
+    if (pct < 90)  return { rate:MAX*0.50,  label:'80–89%',  rLabel:'0.25%',  color:'#0891B2', colorBg:'#ECFEFF' };
+    if (pct < 100) return { rate:MAX*0.75,  label:'90–99%',  rLabel:'0.375%', color:'#7C3AED', colorBg:'#F5F3FF' };
+    return             { rate:MAX,        label:'100%+',  rLabel:'0.5%',   color:'#059669', colorBg:'#ECFDF5' };
+  }
+
+  function setBar(id, pct, color) {
+    const el = document.getElementById(id);
+    el.style.width = Math.min(pct,130)/130*100 + '%';
+    el.style.background = color;
+  }
+
+  function render(revenue, leads, roas, updatedAt) {
+    // Plans
+    const ropPlan      = parseFloat(document.getElementById('rop-plan').value)       || 40_500_000;
+    const mktPlanRev   = parseFloat(document.getElementById('mkt-plan-rev').value)   || 35_000_000;
+    const mktPlanRoas  = parseFloat(document.getElementById('mkt-plan-roas').value)  || 3.3;
+    const mktPlanLeads = parseFloat(document.getElementById('mkt-plan-leads').value) || 3000;
+    const tgtPlanRev   = parseFloat(document.getElementById('tgt-plan-rev').value)   || 35_000_000;
+    const tgtPlanRoas  = parseFloat(document.getElementById('tgt-plan-roas').value)  || 3.0;
+    const tgtPlanLeads = parseFloat(document.getElementById('tgt-plan-leads').value) || 2800;
+
+    // ── РОП ──
+    const ropPct  = revenue / ropPlan * 100;
+    const ropInfo = getRopInfo(ropPct);
+    const ropBonus= revenue * ropInfo.rate;
+    const ropTotal= 300_000 + ropBonus;
+
+    document.getElementById('rop-pct').textContent = ropPct.toFixed(1) + '%';
+    document.getElementById('rop-pct').style.color = ropInfo.color;
+    setBar('rop-bar', ropPct, ropInfo.color);
+    document.getElementById('rop-card').style.borderColor = ropInfo.color + '44';
+    document.getElementById('rop-rev-pct').textContent = ropPct.toFixed(0) + '%';
+    document.getElementById('rop-rev-pct').style.color  = ropInfo.color;
+    setBar('rop-rev-bar', ropPct, ropInfo.color);
+    document.getElementById('rop-rev-fact').textContent = fmt(revenue) + ' тг';
+    const ropTier = document.getElementById('rop-tier');
+    ropTier.textContent = ropInfo.label + ' → ' + ropInfo.rLabel;
+    ropTier.style.background = ropInfo.colorBg;
+    ropTier.style.color      = ropInfo.color;
+    ropTier.style.border     = `1px solid ${ropInfo.color}33`;
+    document.getElementById('rop-total').textContent = fmt(ropTotal);
+    document.getElementById('rop-total').style.color = ropInfo.color;
+    document.getElementById('rop-total-card').style.background = ropInfo.colorBg;
+    document.getElementById('rop-total-sub').textContent = `300 000 + ${fmt(ropBonus)} бонус`;
+
+    // ── МАРКЕТОЛОГ ──
+    const mktRevPct   = revenue   / mktPlanRev   * 100;
+    const mktRoasPct  = roas      / mktPlanRoas  * 100;
+    const mktLeadsPct = leads     / mktPlanLeads * 100;
+    const mktRevInfo  = getMktInfo(mktRevPct);
+    const mktRoasInfo = getMktInfo(mktRoasPct);
+    const mktLeadsInfo= getMktInfo(mktLeadsPct);
+    const mktBonusRev  = revenue * mktRevInfo.rate   * 0.70;
+    const mktBonusRoas = revenue * mktRoasInfo.rate  * 0.15;
+    const mktBonusLeads= revenue * mktLeadsInfo.rate * 0.15;
+    const mktTotal     = 300_000 + mktBonusRev + mktBonusRoas + mktBonusLeads;
+    const mktColor     = mktTotal>=900_000 ? '#059669' : mktTotal>=650_000 ? '#7C3AED' : mktTotal>=420_000 ? '#D97706' : '#DC2626';
+
+    document.getElementById('mkt-pct').textContent = mktRevPct.toFixed(1) + '%';
+    document.getElementById('mkt-pct').style.color = mktRevInfo.color;
+    setBar('mkt-bar', mktRevPct, mktRevInfo.color);
+    document.getElementById('mkt-card').style.borderColor = mktColor + '44';
+    document.getElementById('mkt-rev-pct').textContent = mktRevPct.toFixed(0) + '%';
+    document.getElementById('mkt-rev-pct').style.color  = mktRevInfo.color;
+    setBar('mkt-rev-bar', mktRevPct, mktRevInfo.color);
+    document.getElementById('mkt-roas-pct').textContent = mktRoasPct.toFixed(0) + '%';
+    document.getElementById('mkt-roas-pct').style.color  = mktRoasInfo.color;
+    setBar('mkt-roas-bar', mktRoasPct, mktRoasInfo.color);
+    document.getElementById('mkt-leads-pct').textContent = mktLeadsPct.toFixed(0) + '%';
+    document.getElementById('mkt-leads-pct').style.color  = mktLeadsInfo.color;
+    setBar('mkt-leads-bar', mktLeadsPct, mktLeadsInfo.color);
+    document.getElementById('mkt-total').textContent = fmt(mktTotal);
+    document.getElementById('mkt-total').style.color = mktColor;
+    document.getElementById('mkt-total-card').style.background = mktColor + '12';
+    document.getElementById('mkt-total-sub').textContent = `300 000 + ${fmt(mktBonusRev+mktBonusRoas+mktBonusLeads)} бонус`;
+
+    // ── ТАРГЕТОЛОГ ──
+    const tgtRevPct   = revenue / tgtPlanRev   * 100;
+    const tgtRoasPct  = roas    / tgtPlanRoas  * 100;
+    const tgtLeadsPct = leads   / tgtPlanLeads * 100;
+    const tgtRevInfo  = getTgtInfo(tgtRevPct);
+    const tgtRoasInfo = getTgtInfo(tgtRoasPct);
+    const tgtLeadsInfo= getTgtInfo(tgtLeadsPct);
+    const tgtBonusRev  = revenue * tgtRevInfo.rate   * 0.70;
+    const tgtBonusRoas = revenue * tgtRoasInfo.rate  * 0.15;
+    const tgtBonusLeads= revenue * tgtLeadsInfo.rate * 0.15;
+    const tgtTotal     = 250_000 + tgtBonusRev + tgtBonusRoas + tgtBonusLeads;
+    const tgtColor     = tgtTotal>=380_000 ? '#059669' : tgtTotal>=310_000 ? '#7C3AED' : tgtTotal>=270_000 ? '#D97706' : '#DC2626';
+
+    document.getElementById('tgt-pct').textContent = tgtRevPct.toFixed(1) + '%';
+    document.getElementById('tgt-pct').style.color = tgtRevInfo.color;
+    setBar('tgt-bar', tgtRevPct, tgtRevInfo.color);
+    document.getElementById('tgt-card').style.borderColor = tgtColor + '44';
+    document.getElementById('tgt-rev-pct').textContent = tgtRevPct.toFixed(0) + '%';
+    document.getElementById('tgt-rev-pct').style.color  = tgtRevInfo.color;
+    setBar('tgt-rev-bar', tgtRevPct, tgtRevInfo.color);
+    document.getElementById('tgt-roas-pct').textContent = tgtRoasPct.toFixed(0) + '%';
+    document.getElementById('tgt-roas-pct').style.color  = tgtRoasInfo.color;
+    setBar('tgt-roas-bar', tgtRoasPct, tgtRoasInfo.color);
+    document.getElementById('tgt-leads-pct').textContent = tgtLeadsPct.toFixed(0) + '%';
+    document.getElementById('tgt-leads-pct').style.color  = tgtLeadsInfo.color;
+    setBar('tgt-leads-bar', tgtLeadsPct, tgtLeadsInfo.color);
+    document.getElementById('tgt-total').textContent = fmt(tgtTotal);
+    document.getElementById('tgt-total').style.color = tgtColor;
+    document.getElementById('tgt-total-card').style.background = tgtColor + '12';
+    document.getElementById('tgt-total-sub').textContent = `250 000 + ${fmt(tgtBonusRev+tgtBonusRoas+tgtBonusLeads)} бонус`;
+
+    // ── ИТОГО ──
+    const totalPayroll = ropTotal + mktTotal + tgtTotal;
+    document.getElementById('total-payroll').textContent = fmt(totalPayroll);
+    document.getElementById('summary-pills').innerHTML =
+      `<span class="s-pill" style="background:var(--rop-lt);color:var(--rop);border-color:${ropInfo.color}33">РОП ${fmt(ropTotal)} тг</span>` +
+      `<span class="s-pill" style="background:var(--mkt-lt);color:var(--mkt);border-color:${mktColor}33">Маркетолог ${fmt(mktTotal)} тг</span>` +
+      `<span class="s-pill" style="background:var(--tgt-lt);color:var(--tgt);border-color:${tgtColor}33">Таргетолог ${fmt(tgtTotal)} тг</span>`;
+
+    document.getElementById('s-dot').className    = 'dot live';
+    document.getElementById('s-text').textContent  = 'Актуально';
+    document.getElementById('updated-at').textContent = 'Обновлено: ' + updatedAt;
+    document.getElementById('err-banner').style.display = 'none';
+  }
+
+  function rerender() { if (cache) render(cache.revenue, cache.leads, cache.roas, cache.updatedAt); }
+
+  async function fetchData() {
+    const url = localStorage.getItem(SK);
+    if (!url) return;
+    document.getElementById('s-dot').className    = 'dot';
+    document.getElementById('s-text').textContent  = 'Обновление...';
+    try {
+      const data = await fetch(url).then(r => r.json());
+      if (!data.ok) throw new Error(data.error);
+      cache = data;
+      render(data.revenue, data.leads, data.roas, data.updatedAt);
+    } catch(e) {
+      document.getElementById('s-dot').className    = 'dot err';
+      document.getElementById('s-text').textContent  = 'Ошибка';
+      const b = document.getElementById('err-banner');
+      b.style.display = 'block';
+      b.textContent   = 'Не удалось загрузить: ' + e.message;
+    }
+  }
+
+  function saveUrl() {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url.startsWith('https://script.google.com')) { alert('Вставьте корректный URL'); return; }
+    localStorage.setItem(SK, url); showDash(); fetchData();
+  }
+
+  function showDash() {
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+    if (timer) clearInterval(timer);
+    timer = setInterval(fetchData, 2*60*1000);
+  }
+
+  function resetUrl() {
+    if (!confirm('Сбросить подключение?')) return;
+    localStorage.removeItem(SK); clearInterval(timer);
+    document.getElementById('setup-screen').style.display = 'block';
+    document.getElementById('dashboard').style.display    = 'none';
+  }
+
+  // Plan inputs
+  ['rop-plan','mkt-plan-rev','mkt-plan-roas','mkt-plan-leads','tgt-plan-rev','tgt-plan-roas','tgt-plan-leads'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      localStorage.setItem('owner_plan_'+id, document.getElementById(id).value);
+      rerender();
+    });
+    const saved = localStorage.getItem('owner_plan_'+id);
+    if (saved) document.getElementById(id).value = saved;
+  });
+
+  const savedUrl = localStorage.getItem(SK);
+  if (savedUrl) { showDash(); fetchData(); }
+</script>
+</body>
+</html>
